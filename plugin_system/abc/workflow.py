@@ -22,21 +22,19 @@ class WorkflowPlugin(Plugin):
         """
 
     def get_memory(self, ctx: Context) -> None:
-        ctx.memory = ["A"]
+        pass
 
     def gather_system_prompts(self, ctx: Context) -> None:
-        print("gsp")
         ctx.system_prompts.extend(item for sublist in self.pm.hook.generate_system_prompts(ctx=ctx) for item in sublist)
 
     def prepare_llm_functions(self, ctx: Context) -> None:
-        print("plf")
         ctx.llm_functions.extend(item for sublist in self.pm.hook.generate_llm_functions(ctx=ctx) for item in sublist)
 
     def call_llm(self, ctx: Context) -> None:
         pass
 
     def add_memory(self, ctx: Context) -> None:
-        print(ctx.memory)
+        pass
 
     def reply(self, ctx: Context) -> None:
-        print(ctx.system_prompts)
+        pass

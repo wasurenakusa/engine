@@ -6,11 +6,11 @@ from plugin_system.abc.plugin import Plugin
 from plugin_system.hook import plugin_hookspec
 
 
-class ChannelReciverPlugin(Plugin):
+class ReciverPlugin(Plugin):
     """
-    This plugin allows to implement reciving stuff... it is the only plugin type directly called by the engine! Every
-    other plugins are called by other plugins (most likeley workflow plugins) normaly this will be implemented together
-    with a ChannelSenderPlugin if it is a abitrary trigger, make sure to provide a default channel.
+    This plugin allows to implement reciving stuff... it is the only plugin type directly called by the engine directly!
+    Every other plugins are called by other plugins (most likeley workflow plugins) normaly this will be implemented
+    together with a ChannelSenderPlugin if it is a abitrary trigger, make sure to provide a default channel.
     """
 
     channel_name: str
