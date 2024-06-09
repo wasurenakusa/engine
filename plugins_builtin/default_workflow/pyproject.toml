@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "example"
+version = "0.1.0"
+description = ""
+authors = ["Christopher Schmitt <mail@christopher.gg>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+python-holidayapi = "^1.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
