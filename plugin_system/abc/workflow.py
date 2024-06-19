@@ -2,7 +2,6 @@ from abc import abstractmethod
 
 from models.context import Context
 from plugin_system.abc.plugin import Plugin
-from plugin_system.hook import plugin_hookspec
 
 
 class WorkflowPlugin(Plugin):
@@ -13,7 +12,6 @@ class WorkflowPlugin(Plugin):
 
     name = "default"
 
-    @plugin_hookspec
     @abstractmethod
     def start_workflow(self, ctx: Context) -> None:
         """
