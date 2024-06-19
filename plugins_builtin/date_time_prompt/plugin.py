@@ -7,7 +7,6 @@ from pydantic import BaseModel
 from models.context import Context
 from models.system_prompt import SystemPrompt
 from plugin_system.abc.system_prompt_module import SystemPromptPlugin
-from plugin_system.hook import plugin_hook
 
 
 class PartOfDay(enum.Enum):
@@ -63,7 +62,6 @@ class DateTimePrompt(SystemPromptPlugin):
             self.config.locale = self.get_system_locale()
         pendulum.set_locale(self.config.locale)
 
-    @plugin_hook
     def generate_system_prompts(self, ctx: Context) -> list[SystemPrompt]:  # noqa: ARG002
         now = pendulum.now()
         # TODO: in the future we should check if its a holiday too but that needs some kind of api to get all the

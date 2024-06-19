@@ -1,6 +1,5 @@
 from models.context import Context
 from plugin_system.abc.workflow import WorkflowPlugin
-from plugin_system.hook import plugin_hook
 
 
 class DefaultWorkflow(WorkflowPlugin):
@@ -11,7 +10,6 @@ class DefaultWorkflow(WorkflowPlugin):
         if config:
             self.config = config
 
-    @plugin_hook
     def start_workflow(self, ctx: Context) -> None:
         self.get_memory(ctx)
         self.gather_system_prompts(ctx)

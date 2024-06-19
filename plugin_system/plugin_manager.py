@@ -7,11 +7,15 @@ import sys
 from abc import ABC
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
 
 from models.character import CharacterModel, PluginModel
+
+if TYPE_CHECKING:
+    from plugin_system.abc.plugin import Plugin
 
 
 class PluginManager:
@@ -19,7 +23,7 @@ class PluginManager:
 
     def __init__(self, character: CharacterModel) -> None:
         self.__character = character
-        self.__registered_plugin_types: list = []
+        self.__registered_plugin_types: list[Plugin] = []
         self.__plugin_type_map: dict = {}
         self.__register_plugin_type()
 
@@ -45,10 +49,8 @@ class PluginManager:
 
         print(self.__registered_plugins_function_map)
 
-    def __register_plugins(self):
-        from plugin_system.abc.plugin import Plugin
-
-        def add_to_registered_plugins_function_map(plugin: Plugin):
+    def __register_plugins(self) -> None:
+        def add_to_registered_plugins_function_map(plugin: type["Plugin"]) -> None:
             for k, v in self.__loaded_plugin_function_class_map.items():
                 if plugin in v:
                     self.__registered_plugins_function_map[k].append(plugin)
@@ -63,7 +65,7 @@ class PluginManager:
             self.__registered_plugins.append(initialized)
             add_to_registered_plugins_function_map(plugin_class)
 
-    def __get_loaded_plugin_class_by_name(self, name: str):
+    def __get_loaded_plugin_class_by_name(self, name: str) -> type["Plugin"] | None:  # Damn I dont like that
         for loaded_plugin in self.__loaded_plugins:
             if loaded_plugin.__name__ == name:
                 return loaded_plugin
@@ -102,7 +104,6 @@ class PluginManager:
         Load plugins from the plugin path.
 
         """
-        from plugin_system.abc.plugin import Plugin
 
         external_plugin_folders = [folder for folder in Path("plugins").glob("*") if folder.is_dir()]
         builtin_plungin_folders = [folder for folder in Path("plugins_builtin").glob("*") if folder.is_dir()]
@@ -112,6 +113,9 @@ class PluginManager:
         # external plugins get into the list first, so external plugins can override a internal plugin completly
         # (for example to patch a behaviour etc.)
         all_plugin_classes = external_plugin_classes + internal_plugin_classes
+
+        # Lazy load to preven circular imports
+        from plugin_system.abc.plugin import Plugin
 
         for plugin_class in all_plugin_classes:
             # get all the keys in self.registered_plugin_types where plugin_class is inside the list
@@ -135,7 +139,7 @@ class PluginManager:
                     plugin_classes.append(plugin_class)
         return plugin_classes
 
-    def __load_plugin(self, plugin_path: Path, *, is_external: bool):
+    def __load_plugin(self, plugin_path: Path, *, is_external: bool) -> type["Plugin"]:
         """
         Loads a plugin from the given plugin_path. Installs the dependencies of external plugins too.
         And registers it to the plugin manager.
@@ -151,6 +155,8 @@ class PluginManager:
         Returns:
             bool: True if the plugin was loaded, False otherwise.
         """
+
+        # Lazy load to preven circular imports
         from plugin_system.abc.plugin import Plugin
 
         module_name = plugin_path.name

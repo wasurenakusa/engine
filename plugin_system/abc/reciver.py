@@ -3,7 +3,6 @@ from abc import abstractmethod
 from models.context import Context
 from models.payload import RequestPayload
 from plugin_system.abc.plugin import Plugin
-from plugin_system.hook import plugin_hookspec
 
 
 class ReciverPlugin(Plugin):
@@ -15,7 +14,6 @@ class ReciverPlugin(Plugin):
 
     channel_name: str
 
-    @plugin_hookspec
     @abstractmethod
     def listen_to_channel(self) -> None:
         """

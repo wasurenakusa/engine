@@ -2,7 +2,6 @@ from abc import abstractmethod
 
 from models.context import Context
 from plugin_system.abc.plugin import Plugin
-from plugin_system.hook import plugin_hookspec
 
 
 class ChannelSenderPlugin(Plugin):
@@ -13,7 +12,6 @@ class ChannelSenderPlugin(Plugin):
 
     channel: str
 
-    @plugin_hookspec
     @abstractmethod
     def send_message(self, ctx: Context, message: str) -> None:
         """
