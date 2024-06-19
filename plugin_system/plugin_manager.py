@@ -13,6 +13,7 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import parse as parse_version
 
 from models.character import CharacterModel, PluginModel
+from plugin_system.call_builder import CallBuilder
 
 if TYPE_CHECKING:
     from plugin_system.abc.plugin import Plugin
@@ -46,12 +47,14 @@ class PluginManager:
 
         # the character config plugin config name represents the class name of the plugin for now iterate over the list of plugins,
         self.__activate_plugins()
-
-        print(self.__activated_plugins_fn_map)
+        self.plugin_setup()
 
     def __add_to_fn_map(self, plugin: type["Plugin"]) -> None:
         for k, v in self.__loaded_plugin_function_class_map.items():
-            if plugin in v:
+            if inspect.isclass(plugin):
+                msg = "This is a class not a instance!!"
+                raise TypeError(msg)
+            if plugin.__class__ in v:
                 self.__activated_plugins_fn_map[k].append(plugin)
 
     def __activate_plugins(self) -> None:
@@ -66,7 +69,7 @@ class PluginManager:
     def __activate_plugin(self, plugin_class: type["Plugin"]) -> None:
         initialized = plugin_class(self)
         self.__activated_plugins.append(initialized)
-        self.__add_to_fn_map(plugin_class)
+        self.__add_to_fn_map(initialized)
 
     def __loaded_plugin_class_by_name(self, name: str) -> type["Plugin"] | None:  # Damn I dont like that
         for loaded_plugin in self.__loaded_plugins:
@@ -275,5 +278,7 @@ class PluginManager:
         Every plugin inplementation should have the plugin_setup method as it could not be called by hooks (because the
         hookspecs would get into the way) we call it directly in the order the plugins where registered
         """
-        for plugin in self.pm.get_plugins():
-            plugin.plugin_setup()
+        self.call("plugin_setup").all()
+
+    def call(self, function_name: str, **kwargs: dict[str, any]) -> CallBuilder:
+        return CallBuilder(self.__activated_plugins_fn_map, function_name, **kwargs)
