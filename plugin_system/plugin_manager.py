@@ -38,34 +38,37 @@ class PluginManager:
         # registered plugins are initialized classes, these are later used to do plugin calls.
 
         # for a overview of reqistered plugins
-        self.__registered_plugins: list = []
-        self.__registered_plugins_function_map: dict = {}
+        self.__activated_plugins: list = []
+        self.__activated_plugins_fn_map: dict = {}
 
         for fn_name in self.__plugin_type_map:
-            self.__registered_plugins_function_map[fn_name] = []
+            self.__activated_plugins_fn_map[fn_name] = []
 
         # the character config plugin config name represents the class name of the plugin for now iterate over the list of plugins,
-        self.__register_plugins()
+        self.__activate_plugins()
 
-        print(self.__registered_plugins_function_map)
+        print(self.__activated_plugins_fn_map)
 
-    def __register_plugins(self) -> None:
-        def add_to_registered_plugins_function_map(plugin: type["Plugin"]) -> None:
-            for k, v in self.__loaded_plugin_function_class_map.items():
-                if plugin in v:
-                    self.__registered_plugins_function_map[k].append(plugin)
+    def __add_to_fn_map(self, plugin: type["Plugin"]) -> None:
+        for k, v in self.__loaded_plugin_function_class_map.items():
+            if plugin in v:
+                self.__activated_plugins_fn_map[k].append(plugin)
 
+    def __activate_plugins(self) -> None:
         for plugin_config in self.__character.plugins:
-            plugin_class = self.__get_loaded_plugin_class_by_name(plugin_config.name)
+            plugin_class = self.__loaded_plugin_class_by_name(plugin_config.name)
             if not plugin_class:
                 logging.warning(f"Plugin {plugin_config.name} not found. continue")
                 continue
 
-            initialized = plugin_class(self)
-            self.__registered_plugins.append(initialized)
-            add_to_registered_plugins_function_map(plugin_class)
+            self.__activate_plugin(plugin_class)
 
-    def __get_loaded_plugin_class_by_name(self, name: str) -> type["Plugin"] | None:  # Damn I dont like that
+    def __activate_plugin(self, plugin_class: type["Plugin"]) -> None:
+        initialized = plugin_class(self)
+        self.__activated_plugins.append(initialized)
+        self.__add_to_fn_map(plugin_class)
+
+    def __loaded_plugin_class_by_name(self, name: str) -> type["Plugin"] | None:  # Damn I dont like that
         for loaded_plugin in self.__loaded_plugins:
             if loaded_plugin.__name__ == name:
                 return loaded_plugin
@@ -83,21 +86,6 @@ class PluginManager:
                     self.__plugin_type_map[ptfn] = [plugin_type]
                 elif plugin_type not in self.__plugin_type_map[ptfn]:
                     self.__plugin_type_map[ptfn].append(plugin_type)
-
-    def __convert_caret_to_pip(self, version_specifier: str) -> str:
-        """
-        Converts a caret version specifier to a pip-compatible version specifier.
-
-        Args:
-            version_specifier (str): The version specifier.
-
-        Returns:
-            str: The pip-compatible version specifier.
-        """
-        if version_specifier.startswith("^"):
-            major_version = version_specifier[1:].split(".")[0]
-            return f"~={major_version}.0"
-        return version_specifier
 
     def __load_all_plugins(self) -> None:
         """
@@ -250,7 +238,7 @@ class PluginManager:
         finally:
             sys.path.pop(0)
 
-    def get_plugin_config(self, name: str) -> dict:
+    def get_plugin_config(self, plugin_name: str) -> dict:
         """
         Retrieves the configuration for a plugin with the given name.
 
@@ -261,11 +249,26 @@ class PluginManager:
             dict or None: The configuration for the plugin if found, None otherwise.
         """
         for p in self.__character.plugins:
-            if p.name == name:
+            if p.name == plugin_name:
                 if p.config is None:
                     return {}
                 return p.config
         return None
+
+    def __convert_caret_to_pip(self, version_specifier: str) -> str:
+        """
+        Converts a caret version specifier to a pip-compatible version specifier.
+
+        Args:
+            version_specifier (str): The version specifier.
+
+        Returns:
+            str: The pip-compatible version specifier.
+        """
+        if version_specifier.startswith("^"):
+            major_version = version_specifier[1:].split(".")[0]
+            return f"~={major_version}.0"
+        return version_specifier
 
     def plugin_setup(self) -> None:
         """
