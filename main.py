@@ -18,29 +18,18 @@ def main(character_config_file: str) -> None:
     character_config = load_character_config(Path(character_config_file))
     pm = PluginManager(character_config)
 
-    plugin_types = [
-        SystemPromptPlugin,
-        ReciverPlugin,
-        ChannelSenderPlugin,
-        WorkflowPlugin,
-        MemoryPlugin,
-        LlmFunctionPlugin,
-    ]
+    # pm.load_and_register_plugins()
 
-    pm.register_plugin_types(plugin_types)
-
-    pm.load_and_register_plugins()
-
-    ctx = Context(
-        character=character_config,
-        request_payload=RequestPayload(),
-        workflow="test",
-        channel="test",
-        memory=[],
-        llm_functions=[],
-        system_prompts=[],
-    )
-    pm.hook.start_workflow(ctx=ctx)
+    # ctx = Context(
+    #     character=character_config,
+    #     request_payload=RequestPayload(),
+    #     workflow="test",
+    #     channel="test",
+    #     memory=[],
+    #     llm_functions=[],
+    #     system_prompts=[],
+    # )
+    # pm.hook.start_workflow(ctx=ctx)
     # print(pm.pm.list_name_plugin())
 
 
