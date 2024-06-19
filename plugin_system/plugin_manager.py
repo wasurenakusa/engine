@@ -24,40 +24,63 @@ class PluginManager:
 
     def __init__(self, character: CharacterModel) -> None:
         self.__character = character
+
+        # registered plugins are the base abstract classes of the plugins, they are used to check if a plugin is
+        # properly implemented
         self.__registered_plugin_types: list[Plugin] = []
         self.__plugin_type_map: dict = {}
         self.__register_plugin_type()
 
-        # Loaded plugins are the class of the plugin only, its not initialized yet
+        # Loaded plugins are the class of the actual plugins only, they are not instantiated yet.
         self.__loaded_plugins: list[type] = []
         self.__loaded_plugin_function_class_map: dict = {}
-
         for fn_name in self.__plugin_type_map:
             self.__loaded_plugin_function_class_map[fn_name] = []
         self.__load_all_plugins()
 
-        # registered plugins are initialized classes, these are later used to do plugin calls.
-
-        # for a overview of reqistered plugins
+        # activated plugins are instantiated classes, these are later used to do plugin calls.
         self.__activated_plugins: list = []
         self.__activated_plugins_fn_map: dict = {}
-
         for fn_name in self.__plugin_type_map:
             self.__activated_plugins_fn_map[fn_name] = []
 
-        # the character config plugin config name represents the class name of the plugin for now iterate over the list of plugins,
+        # Based on the character config we activate the plugins
         self.__activate_plugins()
-        self.plugin_setup()
+
+        # All plugins are activated now, we can call the plugin_setup method of each plugin (this way if a plugin wants
+        # to call a plugin method of another plugin it can do so without any problems)
+        self.__plugin_setup()
 
     def __add_to_fn_map(self, plugin: type["Plugin"]) -> None:
+        """
+        Adds the given plugin to the function map.
+
+        Args:
+            plugin (type["Plugin"]): The plugin to be added.
+
+        Raises:
+            TypeError: If the plugin is a class instead of an instance.
+
+        """
         for k, v in self.__loaded_plugin_function_class_map.items():
             if inspect.isclass(plugin):
-                msg = "This is a class not a instance!!"
+                msg = "This is a class not a instance!! We should not be here!"
                 raise TypeError(msg)
             if plugin.__class__ in v:
                 self.__activated_plugins_fn_map[k].append(plugin)
 
     def __activate_plugins(self) -> None:
+        """
+        Activates the plugins specified in the character's plugin configuration.
+
+        This method iterates over the plugins specified in the character's plugin configuration
+        and activates each plugin by calling the __activate_plugin method.
+
+        If a plugin is not found, a warning message is logged and the iteration continues to the next plugin.
+
+        Returns:
+            None
+        """
         for plugin_config in self.__character.plugins:
             plugin_class = self.__loaded_plugin_class_by_name(plugin_config.name)
             if not plugin_class:
@@ -67,11 +90,30 @@ class PluginManager:
             self.__activate_plugin(plugin_class)
 
     def __activate_plugin(self, plugin_class: type["Plugin"]) -> None:
+        """
+        Activates a plugin by initializing an instance of the specified plugin class,
+        adding it to the list of activated plugins, and adding its functions to the function map.
+
+        Args:
+            plugin_class (type["Plugin"]): The class of the plugin to activate.
+
+        Returns:
+            None
+        """
         initialized = plugin_class(self)
         self.__activated_plugins.append(initialized)
         self.__add_to_fn_map(initialized)
 
-    def __loaded_plugin_class_by_name(self, name: str) -> type["Plugin"] | None:  # Damn I dont like that
+    def __loaded_plugin_class_by_name(self, name: str) -> type["Plugin"] | None:
+        """
+        Retrieves the loaded plugin class by its name.
+
+        Args:
+            name (str): The name of the plugin class.
+
+        Returns:
+            type["Plugin"] | None: The loaded plugin class if found, None otherwise.
+        """
         for loaded_plugin in self.__loaded_plugins:
             if loaded_plugin.__name__ == name:
                 return loaded_plugin
@@ -92,24 +134,28 @@ class PluginManager:
 
     def __load_all_plugins(self) -> None:
         """
-        Load plugins from the plugin path.
+        Load all plugins from external and internal plugin folders.
 
+        This method searches for plugin folders in the 'plugins' and 'plugins_builtin' directories.
+        It loads the plugins from these folders and adds them to the list of loaded plugin classes.
+        The loaded plugin classes are then mapped to their corresponding plugin types.
+
+        Note: External plugins have higher priority and can override internal plugins. If a plugin with the same name is
+        found in both the external and internal plugin folders, the external plugin will be loaded.
+
+        Returns:
+            None
         """
-
         external_plugin_folders = [folder for folder in Path("plugins").glob("*") if folder.is_dir()]
-        builtin_plungin_folders = [folder for folder in Path("plugins_builtin").glob("*") if folder.is_dir()]
+        builtin_plugin_folders = [folder for folder in Path("plugins_builtin").glob("*") if folder.is_dir()]
 
         external_plugin_classes = self.__load_plugins_from_folder(external_plugin_folders, is_external=True)
-        internal_plugin_classes = self.__load_plugins_from_folder(builtin_plungin_folders, is_external=False)
-        # external plugins get into the list first, so external plugins can override a internal plugin completly
-        # (for example to patch a behaviour etc.)
+        internal_plugin_classes = self.__load_plugins_from_folder(builtin_plugin_folders, is_external=False)
         all_plugin_classes = external_plugin_classes + internal_plugin_classes
 
-        # Lazy load to preven circular imports
         from plugin_system.abc.plugin import Plugin
 
         for plugin_class in all_plugin_classes:
-            # get all the keys in self.registered_plugin_types where plugin_class is inside the list
             for base_class in inspect.getmro(plugin_class):
                 if base_class in [plugin_class, Plugin, ABC, object]:
                     continue
@@ -118,7 +164,6 @@ class PluginManager:
                     if base_class in v:
                         self.__loaded_plugin_function_class_map[k].append(plugin_class)
                 pass
-        # self.plugin_setup()
 
     def __load_plugins_from_folder(self, plugin_folders: list[Path], *, is_external: bool) -> list:
         plugin_classes = []
@@ -273,7 +318,7 @@ class PluginManager:
             return f"~={major_version}.0"
         return version_specifier
 
-    def plugin_setup(self) -> None:
+    def __plugin_setup(self) -> None:
         """
         Every plugin inplementation should have the plugin_setup method as it could not be called by hooks (because the
         hookspecs would get into the way) we call it directly in the order the plugins where registered
@@ -281,4 +326,14 @@ class PluginManager:
         self.call("plugin_setup").all()
 
     def call(self, function_name: str, **kwargs: dict[str, any]) -> CallBuilder:
+        """
+        Calls a function in the activated plugins.
+
+        Args:
+            function_name (str): The name of the function to call.
+            **kwargs (dict[str, any]): Keyword arguments to pass to the function.
+
+        Returns:
+            CallBuilder: An instance of the CallBuilder class.
+        """
         return CallBuilder(self.__activated_plugins_fn_map, function_name, **kwargs)
