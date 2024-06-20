@@ -19,7 +19,7 @@ from utilities.logging import get_logger
 if TYPE_CHECKING:
     from plugin_system.abc.plugin import Plugin
 
-logger = get_logger("PluginManager")
+logger = get_logger("engine.pm")
 
 
 class PluginManager:

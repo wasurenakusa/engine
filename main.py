@@ -9,7 +9,7 @@ from utilities.config_loader import load_character_config
 from utilities.logging import get_logger
 from utilities.version import get_version
 
-logger = get_logger("Engine")
+logger = get_logger("engine.main")
 load_dotenv()
 
 version = get_version()

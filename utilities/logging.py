@@ -1,10 +1,22 @@
 import logging
 
-from rich.logging import RichHandler
+import colorlog
 
-FORMAT = "%(message)s"
+FORMAT = "%(asctime)s %(levelname)-7s %(name)-16s %(message)s"
 
-logging.basicConfig(format=FORMAT, level=logging.NOTSET, handlers=[RichHandler(locals_max_string=None)])
+formatter = colorlog.ColoredFormatter(
+    "%(light_white)s%(asctime)s%(reset)s %(log_color)s %(levelname)-8s%(reset)s %(name)-16s %(message)s",
+)
+
+handler = colorlog.StreamHandler()
+handler.setFormatter(formatter)
+
+logging.basicConfig(
+    format=FORMAT,
+    datefmt="%Y-%m-%d %H:%M:%S",
+    level=logging.NOTSET,
+    handlers=[handler],
+)
 
 
 def get_logger(name: str) -> logging.Logger:
