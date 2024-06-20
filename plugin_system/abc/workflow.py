@@ -23,10 +23,18 @@ class WorkflowPlugin(Plugin):
         pass
 
     def gather_system_prompts(self, ctx: Context) -> None:
-        ctx.system_prompts.extend(item for sublist in self.pm.hook.generate_system_prompts(ctx=ctx) for item in sublist)
+        ctx.system_prompts.extend(
+            item
+            for sublist in self.pm.call("generate_system_prompts", ctx=ctx).all()
+            for item in sublist
+        )
 
     def prepare_llm_functions(self, ctx: Context) -> None:
-        ctx.llm_functions.extend(item for sublist in self.pm.hook.generate_llm_functions(ctx=ctx) for item in sublist)
+        ctx.llm_functions.extend(
+            item
+            for sublist in self.pm.call("generate_llm_functions", ctx=ctx).all()
+            for item in sublist
+        )
 
     def call_llm(self, ctx: Context) -> None:
         pass
