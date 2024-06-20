@@ -14,9 +14,12 @@ from packaging.version import parse as parse_version
 
 from models.character import CharacterModel, PluginModel
 from plugin_system.call_builder import CallBuilder
+from utilities.logging import get_logger
 
 if TYPE_CHECKING:
     from plugin_system.abc.plugin import Plugin
+
+logger = get_logger("PluginManager")
 
 
 class PluginManager:
@@ -30,6 +33,7 @@ class PluginManager:
         self.__registered_plugin_types: list[Plugin] = []
         self.__plugin_type_map: dict = {}
         self.__register_plugin_type()
+        logger.debug("%s Plugin types registered", len(self.__registered_plugin_types))
 
         # Loaded plugins are the class of the actual plugins only, they are not instantiated yet.
         self.__loaded_plugins: list[type] = []
@@ -37,6 +41,7 @@ class PluginManager:
         for fn_name in self.__plugin_type_map:
             self.__loaded_plugin_function_class_map[fn_name] = []
         self.__load_all_plugins()
+        logger.info("%s Plugins are loaded and available to be activated", len(self.__loaded_plugins))
 
         # activated plugins are instantiated classes, these are later used to do plugin calls.
         self.__activated_plugins: list = []
@@ -46,10 +51,19 @@ class PluginManager:
 
         # Based on the character config we activate the plugins
         self.__activate_plugins()
+        logger.info("%s Plugins have been activated", len(self.__activated_plugins))
+
+        # log the names of the activated plugins
+        activated_plugin_names = []
+        for plugin in self.__activated_plugins:
+            activated_plugin_names.append(plugin.__class__.__name__)
+        logger.info("Activated plugins: %s", activated_plugin_names)
 
         # All plugins are activated now, we can call the plugin_setup method of each plugin (this way if a plugin wants
         # to call a plugin method of another plugin it can do so without any problems)
+        logger.info("Initializing plugins to be ready for use")
         self.__plugin_setup()
+        logger.info("All plugins are ready to be used!")
 
     def __add_to_fn_map(self, plugin: type["Plugin"]) -> None:
         """
@@ -64,7 +78,7 @@ class PluginManager:
         """
         for k, v in self.__loaded_plugin_function_class_map.items():
             if inspect.isclass(plugin):
-                msg = "This is a class not a instance!! We should not be here!"
+                msg = "This is a class not a instance!! We should not be here at all!"
                 raise TypeError(msg)
             if plugin.__class__ in v:
                 self.__activated_plugins_fn_map[k].append(plugin)
