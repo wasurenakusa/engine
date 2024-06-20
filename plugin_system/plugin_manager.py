@@ -98,7 +98,7 @@ class PluginManager:
         for plugin_config in self.__character.plugins:
             plugin_class = self.__loaded_plugin_class_by_name(plugin_config.name)
             if not plugin_class:
-                logging.warning(f"Plugin {plugin_config.name} not found. continue")
+                logger.warning(f"Plugin {plugin_config.name} not found. continue")
                 continue
 
             self.__activate_plugin(plugin_class)
@@ -213,12 +213,12 @@ class PluginManager:
         try:
             plugin_module = importlib.import_module(module_name)
         except ImportError as e:
-            logging.exception("Failed to import module %s", module_name)
+            logger.exception("Failed to import module %s", module_name)
             return False
         try:
             plugin_class: Plugin = plugin_module.PluginMainClass
         except AttributeError:
-            logging.exception("Failed to find PluginMainClass in module %s, module will not be loaded!", module_name)
+            logger.exception("Failed to find PluginMainClass in module %s, module will not be loaded!", module_name)
             return False
 
         for bc in inspect.getmro(plugin_class):
@@ -269,7 +269,7 @@ class PluginManager:
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", package])  # noqa: S603 plugins always can run abitrary code (they can simply call exactly that so why bother?)
         except subprocess.CalledProcessError:
-            logging.exception("Failed to install package %s, maybe you need to install the dependency by hand", package)
+            logger.exception("Failed to install package %s, maybe you need to install the dependency by hand", package)
             return False
         return True
 
@@ -282,7 +282,7 @@ class PluginManager:
         """
         for d in getattr(plugin_module, "dependencies", []):
             if not self.__is_installed(d):
-                logging.info("Installing package: %s", d)
+                logger.info("Installing package: %s", d)
                 self.__install_package(d)
 
     @contextlib.contextmanager

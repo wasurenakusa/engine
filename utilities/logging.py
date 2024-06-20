@@ -2,17 +2,17 @@ import logging
 
 import colorlog
 
-FORMAT = "%(asctime)s %(levelname)-7s %(name)-16s %(message)s"
-
 formatter = colorlog.ColoredFormatter(
-    "%(light_white)s%(asctime)s%(reset)s %(log_color)s %(levelname)-8s%(reset)s %(name)-16s %(message)s",
+    "%(light_white)s%(asctime)s%(reset)s  "
+    "%(log_color)s%(levelname)-8s%(reset)s "
+    "%(light_white)s%(name)-20s%(reset)s  "
+    "%(message)s",
 )
 
 handler = colorlog.StreamHandler()
 handler.setFormatter(formatter)
 
 logging.basicConfig(
-    format=FORMAT,
     datefmt="%Y-%m-%d %H:%M:%S",
     level=logging.NOTSET,
     handlers=[handler],
