@@ -1,8 +1,6 @@
 from abc import abstractmethod
-from typing import Any
 
 from models.context import Context
-from models.payload import Payload
 from models.request import RequestModel
 from plugin_system.abc.plugin import Plugin
 
@@ -25,8 +23,8 @@ class ReciverPlugin(Plugin):
 
     async def call_workflow(self, request: RequestModel, user: str | None = None) -> None:
         """
-        Calls the workflow with the given request and user. Builds a context that is handed thru the lifetime of the
-        request.
+        Calls the first workflow (aka default workflow) with the given request and user. Builds a context that is
+        exists for the lifetime of the request.
 
         Args:
             request (RequestModel): The request object.
@@ -42,4 +40,4 @@ class ReciverPlugin(Plugin):
         )
         ctx.user = user
 
-        await self.pm.call("start_workflow", ctx=ctx).all()
+        await self.pm.call("start_workflow", ctx=ctx).first()

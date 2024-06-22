@@ -1,7 +1,6 @@
 import contextlib
 import importlib.util
 import inspect
-import logging
 import subprocess
 import sys
 from abc import ABC
@@ -341,7 +340,7 @@ class PluginManager:
         Every plugin inplementation should have the plugin_setup method as it could not be called by hooks (because the
         hookspecs would get into the way) we call it directly in the order the plugins where registered
         """
-        await self.call("plugin_setup").all()
+        await self.call("plugin_setup").all_async()
 
     def call(self, function_name: str, **kwargs: dict[str, any]) -> CallBuilder:
         """

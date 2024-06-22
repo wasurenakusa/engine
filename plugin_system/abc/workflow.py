@@ -15,28 +15,29 @@ class WorkflowPlugin(Plugin):
     @abstractmethod
     async def start_workflow(self, ctx: Context) -> None:
         """
-        The workflow is called via the plugin manager hock, it should check it ctx.workflow if it should run or not by
+        The workflow is called via the plugin manager, it should check it ctx.workflow if it should run or not by
         comparing the workflow_name. This function should be called by ChannelReciver Plugins
         """
 
-    def get_memory(self, ctx: Context) -> None:
+    async def get_memory(self, ctx: Context) -> None:
         pass
 
-    def gather_system_prompts(self, ctx: Context) -> None:
+    async def gather_system_prompts(self, ctx: Context) -> None:
         ctx.system_prompts.extend(
-            item for sublist in self.pm.call("generate_system_prompts", ctx=ctx).all() for item in sublist
+            item for sublist in await self.pm.call("generate_system_prompts", ctx=ctx).all() for item in sublist
         )
 
-    def prepare_llm_functions(self, ctx: Context) -> None:
+    async def prepare_llm_functions(self, ctx: Context) -> None:
         ctx.llm_functions.extend(
-            item for sublist in self.pm.call("generate_llm_functions", ctx=ctx).all() for item in sublist
-        )
+            item for sublist in await self.pm.call("generate_llm_functions", ctx=ctx).all_async() for item in sublist
+        )  # while it uses the ctx it does not change it so we should be save to do it with all_async
 
-    def call_llm(self, ctx: Context) -> None:
+    async def call_llm(self, ctx: Context) -> None:
         pass
 
-    def add_memory(self, ctx: Context) -> None:
+    async def add_memory(self, ctx: Context) -> None:
         pass
 
-    def reply(self, ctx: Context) -> None:
-        pass
+    async def reply(self, ctx: Context) -> None:
+        await self.pm.call("emit", ctx=ctx).all_async()
+        # I think its okay to use async here again, the ctx should not change anymore atleast not in the reply part

@@ -26,7 +26,7 @@ class DiscordChannel(ReciverPlugin, EmitterPlugin):
 
     async def listen(self) -> None:
         @self.client.listen(Startup)
-        async def start(event: Startup) -> None:
+        async def start() -> None:
             self.logger.info("Listening for Discord events as %s", self.client.user.display_name)
 
         @self.client.listen(MessageCreate)

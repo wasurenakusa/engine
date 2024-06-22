@@ -27,7 +27,7 @@ async def engine(character_config_file: str) -> None:
     logger.info("Initialize plugin manager")
     pm = await PluginManager(character_config).init()
     logger.info("Start listening to channels")
-    await pm.call("listen").all()
+    await pm.call("listen").all_async()  # All listeners can start at the same time :)
 
 
 def main(character_config_file: str) -> None:

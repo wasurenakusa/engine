@@ -1,4 +1,7 @@
 import random
+from collections.abc import Callable
+
+import anyio
 
 from utilities.logging import get_logger
 
@@ -45,6 +48,7 @@ class CallBuilder:
         """
         results = []
         plugin_list = self.plugin_list if limit is None else self.plugin_list[:limit]
+
         if not self.plugin_list:
             self.logger.warning("No plugin function was called for %s", self.function_name)
             return []
@@ -70,6 +74,7 @@ class CallBuilder:
         """
         if not self.plugin_list:
             return []
+
         fn = getattr(self.plugin_list[0], self.function_name)
         result = await fn(**self.kwargs)
         return [result]
@@ -83,6 +88,7 @@ class CallBuilder:
         """
         if not self.plugin_list:
             return []
+
         fn = getattr(self.plugin_list[-1], self.function_name)
         result = await fn(**self.kwargs)
         return [result]
@@ -99,6 +105,7 @@ class CallBuilder:
         if not self.plugin_list:
             self.logger.warning("No plugin function was called for %s", self._function_name)
             return []
+
         rng = random.randint(0, len(self.plugin_list) - 1)  # noqa: S311  No shite, Sherlock
         fn = getattr(self.plugin_list[rng], self.function_name)
         result = await fn(**self.kwargs)
@@ -121,9 +128,51 @@ class CallBuilder:
                 fn = getattr(plugin, self.function_name)
                 result = await fn(**self.kwargs)
                 results.append(result)
-                plugins_called.append(plugin.__name__)
-
+                plugins_called.append(plugin.__class__.__name__)
+        self.logger.debug(
+            "Called '%s' for %s",
+            self.function_name,
+            plugins_called,
+        )
         return results
 
-    def get_plugin_names(self, plugin_list) -> list[str]:
+    async def all_async(self, limit: int | None = None) -> list[any]:
+        """
+        Executes the specified function on all plugins in the plugin list asyncron. Should only be used if there is no
+        ctx changing inside the functions involved otherwise this would most likeley break thinks...
+        functions that should be safe: generate_system_prompts, plugin_setup as they dont use the context or respond
+        with a not none result.
+
+        Args:
+            limit (int | None, optional): The maximum number of plugins to execute the function on.
+                                         If None, all plugins will be executed. Defaults to None.
+
+        Returns:
+            list[any]: A list of results returned by executing the function on each plugin.
+        """
+
+        if not self.plugin_list:
+            self.logger.warning("No plugin function was called for %s", self.function_name)
+            return []
+
+        results = []
+        plugin_list = self.plugin_list if limit is None else self.plugin_list[:limit]
+
+        async def run_and_collect_result(fn: Callable) -> None:
+            result = await fn(**self.kwargs)
+            results.append(result)
+
+        async with anyio.create_task_group() as tg:
+            for plugin in plugin_list:
+                fn = getattr(plugin, self.function_name)
+                tg.start_soon(run_and_collect_result, fn)
+
+        self.logger.debug(
+            "Called '%s' for %s in parallel",
+            self.function_name,
+            [plugin.__class__.__name__ for plugin in plugin_list],
+        )
+        return results
+
+    def get_plugin_names(self, plugin_list: list[type]) -> list[str]:
         return [plugin.__class__.__name__ for plugin in plugin_list]
