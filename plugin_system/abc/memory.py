@@ -12,13 +12,13 @@ class MemoryPlugin(Plugin):
     """
 
     @abstractmethod
-    def save_to_memory(self, ctx: Context) -> list[SystemPrompt]:
+    async def save_to_memory(self, ctx: Context) -> list[SystemPrompt]:
         """
         This function should save the current conversation somewhere
         """
 
     @abstractmethod
-    def retrive_memory(self, ctx: Context) -> list[SystemPrompt]:
+    async def retrive_memory(self, ctx: Context) -> list[SystemPrompt]:
         """
         This function should retrive the last n amount of messages of a conversation, can additionally be used to
         retrive even older memories

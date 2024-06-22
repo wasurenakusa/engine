@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "discord_channel"
+version = "0.1.0"
+description = ""
+authors = ["Christopher Schmitt <mail@christopher.gg>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+discord-py-interactions = "^5.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

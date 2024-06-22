@@ -13,7 +13,7 @@ class LlmFunctionPlugin(Plugin):
     channel: str
 
     @abstractmethod
-    def generate_llm_functions(self, ctx: Context) -> list[LlmFunction]:
+    async def generate_llm_functions(self, ctx: Context) -> list[LlmFunction]:
         """
         Here the llm functions of the plugin are generated.
         """

@@ -11,7 +11,7 @@ class SystemPromptPlugin(Plugin):
     """
 
     @abstractmethod
-    def generate_system_prompts(self, ctx: Context) -> list[SystemPrompt]:
+    async def generate_system_prompts(self, ctx: Context) -> list[SystemPrompt]:
         """
         This function should generate a list of SystemPromptModules that then gets merged into the system prompt by the
         LLM in the best way to handle it. SO dont do any LLM specific formating etc.

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 
 from models.context import Context
-from models.payload import RequestPayload
+from models.request import RequestModel
 from plugin_system.abc.plugin import Plugin
 
 
@@ -15,12 +15,29 @@ class ReciverPlugin(Plugin):
     channel_name: str
 
     @abstractmethod
-    def listen_to_channel(self) -> None:
+    async def listen(self) -> None:
         """
-        Starts listening to a channel. If a new message or other Trigger implemented by this should trigger a workflow
-        use the self.call_workflow function which creates a context and so on.
+        Starts listening to a source that could trigger an workflow. If a new message or other Trigger implemented by
+        this should trigger a workflow use the self.call_workflow function which creates a context and so on.
         """
 
-    def call_workflow(self, payload: RequestPayload) -> None:
-        ctx = Context(channel=self.channel_name, request_payload=payload)
-        self.pm.hook.start_workflow(ctx=ctx)
+    async def call_workflow(self, request: RequestModel, user: str | None = None) -> None:
+        """
+        Calls the first workflow (aka default workflow) with the given request and user. Builds a context that is
+        exists for the lifetime of the request.
+
+        Args:
+            request (RequestModel): The request object.
+            user (Optional): The user object/id/whatever. Defaults to None.
+
+        Returns:
+            None
+        """
+        ctx = Context(
+            request=request,
+            listener=self.__class__.__name__,
+            emitter=self.__class__.__name__,  # By default we should set the emitter to the same as listener
+        )
+        ctx.user = user
+
+        await self.pm.call("start_workflow", ctx=ctx).first()

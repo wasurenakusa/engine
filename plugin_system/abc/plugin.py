@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from models.character import PluginModel
 from plugin_system.plugin_manager import PluginManager
+from utilities.logging import get_logger
 
 
 class Plugin(ABC):
@@ -9,9 +10,10 @@ class Plugin(ABC):
 
     def __init__(self, pm: PluginManager) -> None:
         self.pm = pm
+        self.logger = get_logger(self.__class__.__name__)
 
     @abstractmethod
-    def plugin_setup(self) -> None:
+    async def plugin_setup(self) -> None:
         """
         Used to setup the plugin, e.g. retriving stuff from config or similar aka stuff we would normaly
         do in a __init__ function (db initialization etc). The plugin configuration should be inside the character yaml

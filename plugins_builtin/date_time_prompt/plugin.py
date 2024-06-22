@@ -55,14 +55,14 @@ class DateTimeConfigModel(BaseModel):
 class DateTimePrompt(SystemPromptPlugin):
     config: DateTimeConfigModel
 
-    def plugin_setup(self) -> None:
+    async def plugin_setup(self) -> None:
         config = self.pm.get_plugin_config(self.__class__.__name__)
         self.config = DateTimeConfigModel(**config)
         if not self.config.locale:
             self.config.locale = self.get_system_locale()
         pendulum.set_locale(self.config.locale)
 
-    def generate_system_prompts(self, ctx: Context) -> list[SystemPrompt]:  # noqa: ARG002
+    async def generate_system_prompts(self, ctx: Context) -> list[SystemPrompt]:  # noqa: ARG002
         now = pendulum.now()
         # TODO: in the future we should check if its a holiday too but that needs some kind of api to get all the
         #       holidays in the world and a way to determin where we are.

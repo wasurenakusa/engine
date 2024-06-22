@@ -6,12 +6,12 @@ from plugin_system.abc.system_prompt_module import SystemPromptPlugin
 class BasicCharacterDescriptions(SystemPromptPlugin):
     config: dict
 
-    def plugin_setup(self) -> None:
+    async def plugin_setup(self) -> None:
         config = self.pm.get_plugin_config(self.__class__.__name__)
         if config:
             self.config = config
 
-    def generate_system_prompts(self, ctx: Context) -> list[SystemPrompt]:  # noqa: ARG002
+    async def generate_system_prompts(self, ctx: Context) -> list[SystemPrompt]:  # noqa: ARG002
         prompts = []
         # config should be a simply kv dict, this plugin simply parses this to a SystemPrompt part
         for name, description in self.config.items():
