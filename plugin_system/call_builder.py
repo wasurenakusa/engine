@@ -1,5 +1,7 @@
 import random
 
+from utilities.logging import get_logger
+
 
 class CallBuilder:
     """
@@ -23,13 +25,14 @@ class CallBuilder:
         Returns:
             None
         """
+        self.logger = get_logger(__name__)
         self.function_name = function_name
         self.plugin_list = plugin_map.get(self.function_name)
         if not self.plugin_list:
             self.plugin_list = []
         self.kwargs = kwargs
 
-    def all(self, limit: int | None = None) -> list[any]:
+    async def all(self, limit: int | None = None) -> list[any]:
         """
         Executes the specified function on all plugins in the plugin list.
 
@@ -42,11 +45,21 @@ class CallBuilder:
         """
         results = []
         plugin_list = self.plugin_list if limit is None else self.plugin_list[:limit]
+        if not self.plugin_list:
+            self.logger.warning("No plugin function was called for %s", self.function_name)
+            return []
         for plugin in plugin_list:
-            results.append(getattr(plugin, self.function_name)(**self.kwargs))
+            fn = getattr(plugin, self.function_name)
+            result = await fn(**self.kwargs)
+            results.append(result)
+        self.logger.debug(
+            "Called '%s' for %s",
+            self.function_name,
+            [plugin.__class__.__name__ for plugin in plugin_list],
+        )
         return results
 
-    def first(self) -> list[any]:
+    async def first(self) -> list[any]:
         """
         Returns the result of calling the specified function on the first plugin in the plugin list.
 
@@ -57,9 +70,11 @@ class CallBuilder:
         """
         if not self.plugin_list:
             return []
-        return [getattr(self.plugin_list[0], self.function_name)(**self.kwargs)]
+        fn = getattr(self.plugin_list[0], self.function_name)
+        result = await fn(**self.kwargs)
+        return [result]
 
-    def last(self) -> list[any]:
+    async def last(self) -> list[any]:
         """
         Returns the result of calling the last plugin in the plugin list with the specified function name and arguments.
 
@@ -68,9 +83,11 @@ class CallBuilder:
         """
         if not self.plugin_list:
             return []
-        return [getattr(self.plugin_list[-1], self.function_name)(**self.kwargs)]
+        fn = getattr(self.plugin_list[-1], self.function_name)
+        result = await fn(**self.kwargs)
+        return [result]
 
-    def random(self) -> list[any]:
+    async def random(self) -> list[any]:
         """
         Returns a list containing the result of calling a random plugin function.
 
@@ -80,11 +97,14 @@ class CallBuilder:
             list[any]: A list containing the result of calling a random plugin function.
         """
         if not self.plugin_list:
+            self.logger.warning("No plugin function was called for %s", self._function_name)
             return []
         rng = random.randint(0, len(self.plugin_list) - 1)  # noqa: S311  No shite, Sherlock
-        return [getattr(self.plugin_list[rng], self.function_name)(**self.kwargs)]
+        fn = getattr(self.plugin_list[rng], self.function_name)
+        result = await fn(**self.kwargs)
+        return [result]
 
-    def only(self, plugins: list[str]) -> list[any]:
+    async def only(self, plugins: list[str]) -> list[any]:
         """
         Executes the specified function on the selected plugins only.
 
@@ -95,7 +115,15 @@ class CallBuilder:
             list[any]: A list of results returned by the executed function on the selected plugins.
         """
         results = []
+        plugins_called = []
         for plugin in self.plugin_list:
             if plugin.__name__ in plugins:
-                results.append(getattr(plugin, self.function_name)(**self.kwargs))
+                fn = getattr(plugin, self.function_name)
+                result = await fn(**self.kwargs)
+                results.append(result)
+                plugins_called.append(plugin.__name__)
+
         return results
+
+    def get_plugin_names(self, plugin_list) -> list[str]:
+        return [plugin.__class__.__name__ for plugin in plugin_list]

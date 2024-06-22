@@ -3,6 +3,8 @@ name: Holo the Wise Wolf of Yoitsu
 author: Isuna Hasekura (Character Config by Christopher Schmitt)
 description: 
 plugins:
+  - name: DiscordChannel
+    config: 
   - name: DefaultWorkflow
     config: 
   - name: BasicCharacterDescriptions

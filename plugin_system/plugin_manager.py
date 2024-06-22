@@ -19,13 +19,12 @@ from utilities.logging import get_logger
 if TYPE_CHECKING:
     from plugin_system.abc.plugin import Plugin
 
-logger = get_logger("engine.pm")
-
 
 class PluginManager:
     plugin_configs: list[PluginModel]
 
     def __init__(self, character: CharacterModel) -> None:
+        self.logger = get_logger(__name__)
         self.__character = character
 
         # registered plugins are the base abstract classes of the plugins, they are used to check if a plugin is
@@ -33,7 +32,7 @@ class PluginManager:
         self.__registered_plugin_types: list[Plugin] = []
         self.__plugin_type_map: dict = {}
         self.__register_plugin_type()
-        logger.debug("%s Plugin types registered", len(self.__registered_plugin_types))
+        self.logger.debug("%s Plugin types registered", len(self.__registered_plugin_types))
 
         # Loaded plugins are the class of the actual plugins only, they are not instantiated yet.
         self.__loaded_plugins: list[type] = []
@@ -41,7 +40,7 @@ class PluginManager:
         for fn_name in self.__plugin_type_map:
             self.__loaded_plugin_function_class_map[fn_name] = []
         self.__load_all_plugins()
-        logger.info("%s Plugins are loaded and available to be activated", len(self.__loaded_plugins))
+        self.logger.info("%s Plugins are loaded and available to be activated", len(self.__loaded_plugins))
 
         # activated plugins are instantiated classes, these are later used to do plugin calls.
         self.__activated_plugins: list = []
@@ -51,19 +50,20 @@ class PluginManager:
 
         # Based on the character config we activate the plugins
         self.__activate_plugins()
-        logger.info("%s Plugins have been activated", len(self.__activated_plugins))
+        self.logger.info("%s Plugins have been activated", len(self.__activated_plugins))
 
         # log the names of the activated plugins
         activated_plugin_names = []
         for plugin in self.__activated_plugins:
             activated_plugin_names.append(plugin.__class__.__name__)
-        logger.info("Activated plugins: %s", activated_plugin_names)
+        self.logger.info("Activated plugins: %s", activated_plugin_names)
 
+    async def init(self) -> "PluginManager":
         # All plugins are activated now, we can call the plugin_setup method of each plugin (this way if a plugin wants
         # to call a plugin method of another plugin it can do so without any problems)
-        logger.info("Initializing plugins to be ready for use")
-        self.__plugin_setup()
-        logger.info("All plugins are ready to be used!")
+        self.logger.info("Initializing plugins to be ready for use")
+        await self.__plugin_setup()
+        return self
 
     def __add_to_fn_map(self, plugin: type["Plugin"]) -> None:
         """
@@ -98,7 +98,7 @@ class PluginManager:
         for plugin_config in self.__character.plugins:
             plugin_class = self.__loaded_plugin_class_by_name(plugin_config.name)
             if not plugin_class:
-                logger.warning(f"Plugin {plugin_config.name} not found. continue")
+                self.logger.warning(f"Plugin {plugin_config.name} not found. continue")
                 continue
 
             self.__activate_plugin(plugin_class)
@@ -213,12 +213,14 @@ class PluginManager:
         try:
             plugin_module = importlib.import_module(module_name)
         except ImportError as e:
-            logger.exception("Failed to import module %s", module_name)
+            self.logger.exception("Failed to import module %s", module_name)
             return False
         try:
             plugin_class: Plugin = plugin_module.PluginMainClass
         except AttributeError:
-            logger.exception("Failed to find PluginMainClass in module %s, module will not be loaded!", module_name)
+            self.logger.exception(
+                "Failed to find PluginMainClass in module %s, module will not be loaded!", module_name
+            )
             return False
 
         for bc in inspect.getmro(plugin_class):
@@ -269,7 +271,9 @@ class PluginManager:
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", package])  # noqa: S603 plugins always can run abitrary code (they can simply call exactly that so why bother?)
         except subprocess.CalledProcessError:
-            logger.exception("Failed to install package %s, maybe you need to install the dependency by hand", package)
+            self.logger.exception(
+                "Failed to install package %s, maybe you need to install the dependency by hand", package
+            )
             return False
         return True
 
@@ -282,7 +286,7 @@ class PluginManager:
         """
         for d in getattr(plugin_module, "dependencies", []):
             if not self.__is_installed(d):
-                logger.info("Installing package: %s", d)
+                self.logger.info("Installing package: %s", d)
                 self.__install_package(d)
 
     @contextlib.contextmanager
@@ -332,12 +336,12 @@ class PluginManager:
             return f"~={major_version}.0"
         return version_specifier
 
-    def __plugin_setup(self) -> None:
+    async def __plugin_setup(self) -> None:
         """
         Every plugin inplementation should have the plugin_setup method as it could not be called by hooks (because the
         hookspecs would get into the way) we call it directly in the order the plugins where registered
         """
-        self.call("plugin_setup").all()
+        await self.call("plugin_setup").all()
 
     def call(self, function_name: str, **kwargs: dict[str, any]) -> CallBuilder:
         """
