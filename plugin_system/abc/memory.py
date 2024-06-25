@@ -12,9 +12,15 @@ class MemoryPlugin(Plugin):
     """
 
     @abstractmethod
-    async def save_to_memory(self, ctx: Context) -> list[SystemPrompt]:
+    async def save_to_long_memory(self, ctx: Context) -> list[SystemPrompt]:
         """
         This function should save the current conversation somewhere
+        """
+
+    @abstractmethod
+    async def save_to_short_memory(self, ctx: Context) -> list[SystemPrompt]:
+        """
+        This function should save the current conversation into the short memory (most likeley inmemory)
         """
 
     @abstractmethod
