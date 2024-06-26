@@ -2,7 +2,7 @@ import enum
 import locale
 
 import pendulum
-from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 from models.context import Context
 from models.system_prompt import SystemPrompt
@@ -39,10 +39,10 @@ class SeasonDeVal(enum.StrEnum):
     WINTER = "Winter"
 
 
-class DateTimeConfigModel(BaseModel):
-    locale: str = None  # locale code, if not set system locale is used
+class DateTimeConfigModel(BaseSettings):
+    locale: str | None = None  # locale code, if not set system locale is used
     # country: str = "de"
-    timezone: str = None  # timezone string, if not set, system timezone is applied
+    timezone: str | None = None  # timezone string, if not set, system timezone is applied
     show_time: bool = True  # locale aware time
     show_date: bool = True  # locale aware date
     show_year_only: bool = False  #
@@ -52,12 +52,11 @@ class DateTimeConfigModel(BaseModel):
     show_part_of_the_day: bool = True  # morning/noon/afternoon/evening/night
 
 
-class DateTimePrompt(SystemPromptPlugin):
+class DateTimePlugin(SystemPromptPlugin):
     config: DateTimeConfigModel
 
     async def plugin_setup(self) -> None:
-        config = self.pm.get_plugin_config(self.__class__.__name__)
-        self.config = DateTimeConfigModel(**config)
+        self.load_config(DateTimeConfigModel)
         if not self.config.locale:
             self.config.locale = self.get_system_locale()
         pendulum.set_locale(self.config.locale)

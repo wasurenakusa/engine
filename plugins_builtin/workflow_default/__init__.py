@@ -1,8 +1,8 @@
-from .default_workflow import DefaultWorkflow
+from .default_workflow import DefaultWorkflowPlugin
 
 dependencies = []
 
-PluginMainClass = DefaultWorkflow
+PluginMainClass = DefaultWorkflowPlugin
 
 PLUGIN_NAME = "DefaultWorkflow"
 PLUGIN_AUTHOR = "wasurenakusa team"

@@ -1,8 +1,8 @@
-from .basic_character_description import BasicCharacterDescriptions
+from .character_description import CharacterDescriptionsPlugin
 
 dependencies = []
 
-PluginMainClass = BasicCharacterDescriptions
+PluginMainClass = CharacterDescriptionsPlugin
 
 PLUGIN_NAME = "Basic Character Descriptions"
 PLUGIN_AUTHOR = "wasurenakusa team"

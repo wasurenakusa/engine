@@ -1,7 +1,7 @@
 from abc import abstractmethod
 
 from models.context import Context
-from models.request import RequestModel
+from models.request import RequestMessageModel
 from plugin_system.abc.plugin import Plugin
 
 
@@ -21,7 +21,7 @@ class ReciverPlugin(Plugin):
         this should trigger a workflow use the self.call_workflow function which creates a context and so on.
         """
 
-    async def call_workflow(self, request: RequestModel, user: str | None = None) -> None:
+    async def call_workflow(self, request: RequestMessageModel, user_id: str | None = None) -> None:
         """
         Calls the first workflow (aka default workflow) with the given request and user. Builds a context that is
         exists for the lifetime of the request.
@@ -38,6 +38,6 @@ class ReciverPlugin(Plugin):
             listener=self.__class__.__name__,
             emitter=self.__class__.__name__,  # By default we should set the emitter to the same as listener
         )
-        ctx.user = user
+        ctx.user_id = user_id
 
         await self.pm.call("start_workflow", ctx=ctx).first()

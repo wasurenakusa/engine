@@ -1,8 +1,8 @@
-from .date_time import DateTimePrompt
+from .date_time import DateTimePlugin
 
 dependencies = ["pendulum==^3.0.0", "httpx=^0.27.0"]
 
-PluginMainClass = DateTimePrompt
+PluginMainClass = DateTimePlugin
 
 PLUGIN_NAME = "DateTime Prompt Plugin"
 PLUGIN_AUTHOR = "wasurenakusa team"

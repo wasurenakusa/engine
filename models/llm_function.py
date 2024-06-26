@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -11,7 +12,6 @@ class LlmFnParameter(BaseModel):
 
 
 class LlmFunction(BaseModel):
-    name: str  # The function name will be overriden by the llm plugin consuming it!
     description: str
     parameters: list[LlmFnParameter]
-    fn: Callable
+    fn: Callable[[Any], str]

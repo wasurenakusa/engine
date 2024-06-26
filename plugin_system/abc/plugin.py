@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from pydantic_settings import BaseSettings
+
 from models.character import PluginModel
 from plugin_system.plugin_manager import PluginManager
 from utilities.logging import get_logger
@@ -19,6 +21,19 @@ class Plugin(ABC):
         do in a __init__ function (db initialization etc). The plugin configuration should be inside the character yaml
         under the main_class name of the plugin. This way other plugins can access the configuration too.
         """
+
+    def load_config(self, config_model: BaseSettings) -> None:
+        """
+        Loads the configuration from the characters plugin configuration and sets the self.config instance variable.
+
+        Args:
+            config_model (BaseSettings): The configuration model to use for loading the configuration.
+
+        Returns:
+            None
+        """
+        cfg = self.pm.get_plugin_config(self.__class__.__name__)
+        self.config = config_model(**cfg)
 
     def get_plugin_by_name(self, name: str, plugins: list[PluginModel]) -> PluginModel:
         """

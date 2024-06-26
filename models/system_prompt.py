@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel
 
 
@@ -11,4 +13,4 @@ class SystemPrompt(BaseModel):
     """
 
     name: str
-    content: str | "SystemPrompt"
+    content: str | SystemPrompt

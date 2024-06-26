@@ -1,5 +1,5 @@
-from models.payload import Payload
+from models.message import MessageModel
 
 
-class RequestModel(Payload):
+class RequestMessageModel(MessageModel):
     pass

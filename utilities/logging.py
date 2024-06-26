@@ -14,7 +14,7 @@ handler.setFormatter(formatter)
 
 logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.NOTSET,
+    level=logging.INFO,  # Change this to logging.DEBUG for more verbose output (be prepared for a lot of output!)
     handlers=[handler],
 )
 

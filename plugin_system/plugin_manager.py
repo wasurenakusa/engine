@@ -183,6 +183,8 @@ class PluginManager:
         with PluginManager.add_to_sys_path(Path("plugins" if is_external else "plugins_builtin")):
             for plugin_path in plugin_folders:
                 plugin_class = self.__load_plugin(plugin_path, is_external=is_external)
+                if not plugin_class:
+                    continue
                 self.__loaded_plugins.append(plugin_class)
                 if plugin_class:
                     plugin_classes.append(plugin_class)
@@ -211,23 +213,28 @@ class PluginManager:
         module_name = plugin_path.name
         try:
             plugin_module = importlib.import_module(module_name)
-        except ImportError as e:
+        except ImportError:
             self.logger.exception("Failed to import module %s", module_name)
-            return False
+            return None
         try:
             plugin_class: Plugin = plugin_module.PluginMainClass
         except AttributeError:
             self.logger.exception(
-                "Failed to find PluginMainClass in module %s, module will not be loaded!", module_name
+                "Failed to find PluginMainClass in module %s, module will not be loaded!",
+                module_name,
             )
-            return False
+            return None
 
         for bc in inspect.getmro(plugin_class):
             if bc in [plugin_class, Plugin, ABC, object]:
                 continue
             # check if there are any base classes pressent we dont support if so, ignore the plugin
             if bc not in self.__registered_plugin_types:
-                return False
+                self.logger.error(
+                    "Plugin %s does not implement any known plugin classes, plugin will not be loaded",
+                    plugin_class.__name__,
+                )
+                return None
 
         # internal plugin dependencies should be handled by the main requirements list, so we only handle
         # dependencies for external plugins!
