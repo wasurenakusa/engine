@@ -1,19 +1,24 @@
+from pydantic_settings import BaseSettings
+
 from models.context import Context
 from models.system_prompt import SystemPrompt
 from plugin_system.abc.sys_prompt import SystemPromptPlugin
 
 
-class BasicCharacterDescriptions(SystemPromptPlugin):
-    config: dict
+class CharacterDescriptionsPluginConfig(BaseSettings):
+    class Config:
+        extra = "allow"
+
+
+class CharacterDescriptionsPlugin(SystemPromptPlugin):
+    config: CharacterDescriptionsPluginConfig
 
     async def plugin_setup(self) -> None:
-        config = self.pm.get_plugin_config(self.__class__.__name__)
-        if config:
-            self.config = config
+        self.load_config(CharacterDescriptionsPluginConfig)
 
     async def generate_system_prompts(self, ctx: Context) -> list[SystemPrompt]:  # noqa: ARG002
         prompts = []
-        # config should be a simply kv dict, this plugin simply parses this to a SystemPrompt part
-        for name, description in self.config.items():
+
+        for name, description in self.config.model_dump().items():
             prompts.append(SystemPrompt(name=name, content=description))
         return prompts

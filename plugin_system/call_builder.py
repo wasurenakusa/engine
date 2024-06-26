@@ -63,7 +63,7 @@ class CallBuilder:
         )
         return results
 
-    async def first(self) -> list[any]:
+    async def first(self) -> any:
         """
         Returns the result of calling the specified function on the first plugin in the plugin list.
 
@@ -73,13 +73,13 @@ class CallBuilder:
             list[any]: The result of calling the function on the first plugin.
         """
         if not self.plugin_list:
-            return []
+            self.logger.warning("No plugin function was called for %s", self.function_name)
+            return None
 
         fn = getattr(self.plugin_list[0], self.function_name)
-        result = await fn(**self.kwargs)
-        return [result]
+        return await fn(**self.kwargs)
 
-    async def last(self) -> list[any]:
+    async def last(self) -> any:
         """
         Returns the result of calling the last plugin in the plugin list with the specified function name and arguments.
 
@@ -87,13 +87,13 @@ class CallBuilder:
             list[any]: The result of calling the last plugin's function with the specified arguments.
         """
         if not self.plugin_list:
-            return []
+            self.logger.warning("No plugin function was called for %s", self.function_name)
+            return None
 
         fn = getattr(self.plugin_list[-1], self.function_name)
-        result = await fn(**self.kwargs)
-        return [result]
+        return await fn(**self.kwargs)
 
-    async def random(self) -> list[any]:
+    async def random(self) -> any:
         """
         Returns a list containing the result of calling a random plugin function.
 
@@ -108,8 +108,7 @@ class CallBuilder:
 
         rng = random.randint(0, len(self.plugin_list) - 1)  # noqa: S311  No shite, Sherlock
         fn = getattr(self.plugin_list[rng], self.function_name)
-        result = await fn(**self.kwargs)
-        return [result]
+        return await fn(**self.kwargs)
 
     async def only(self, plugins: list[str]) -> list[any]:
         """
@@ -159,8 +158,11 @@ class CallBuilder:
         plugin_list = self.plugin_list if limit is None else self.plugin_list[:limit]
 
         async def run_and_collect_result(fn: Callable) -> None:
-            result = await fn(**self.kwargs)
-            results.append(result)
+            try:
+                result = await fn(**self.kwargs)
+                results.append(result)
+            except Exception:
+                self.logger.exception("Error while calling %s", fn.__name__)
 
         async with anyio.create_task_group() as tg:
             for plugin in plugin_list:

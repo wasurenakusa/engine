@@ -15,9 +15,9 @@ class Context(BaseModel):
     request: RequestMessageModel | None = None
     response: ResponseMessageModel | None = None
     workflow: str | None = None
-    system_prompts: list[SystemPrompt] | None = None
-    llm_functions: list[LlmFunction] | None = None
-    shortterm_memory: list[MessageModel] | None = None
+    system_prompts: list[SystemPrompt] = []
+    llm_functions: list[LlmFunction] = []
+    shortterm_memory: list[MessageModel] = []
     listener: str = None
     emitter: str = None
-    user: Any = None
+    user_id: str = None

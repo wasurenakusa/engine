@@ -14,3 +14,11 @@ class EmitterPlugin(Plugin):
         """
         Emitt a payload to a target.
         """
+
+    @abstractmethod
+    async def update_status(self, ctx: Context) -> None:
+        """
+        Update the status of the conversation. This function should be called by the workflow plugin. In most cases its
+        used to provide a writing status to the user.
+        """
+        pass

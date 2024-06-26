@@ -1,4 +1,4 @@
-from plugins_builtin.llm_anthropic.anthropic_llm import AnthropicLlm
+from .anthropic_llm import AnthropicLlm
 
 dependencies = ["anthropic=^0.29.0"]
 

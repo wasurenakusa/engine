@@ -1,6 +1,3 @@
-import http
-import os
-
 import httpx
 from interactions import DM, Client, Intents
 from interactions.api.events import MessageCreate, Startup
@@ -14,7 +11,7 @@ from plugin_system.abc.emitter import EmitterPlugin
 from plugin_system.abc.reciver import ReciverPlugin
 
 
-class DiscordChannelConfig(BaseSettings):
+class DiscordPluginConfig(BaseSettings):
     api_token: str = Field(None, alias="DISCORD_API_TOKEN")  # Set
     allowed_mimetypes: list[str] = [
         "image/jpeg",
@@ -25,21 +22,31 @@ class DiscordChannelConfig(BaseSettings):
     allowed_size: int = 3  # in MB
 
 
-class DiscordChannel(ReciverPlugin, EmitterPlugin):
-    config: DiscordChannelConfig
+class DiscordPlugin(ReciverPlugin, EmitterPlugin):
+    config: DiscordPluginConfig
 
     async def plugin_setup(self) -> None:
-        config = self.pm.get_plugin_config(self.__class__.__name__)
-        self.confg = DiscordChannelConfig(**config)
+        self.load_config(DiscordPluginConfig)
         self.client = Client(intents=Intents.MESSAGES | Intents.GUILDS)
 
     async def emit(self, ctx: Context) -> None:
         if ctx.emitter != self.__class__.__name__:
             return
         self.logger.info("Sending response")
-        user = await self.client.fetch_user(ctx.user)
-        if ctx.response and (ctx.response.message or len(ctx.response.files) > 0):
-            await user.send(ctx.response.message, files=ctx.response.files)
+        user = await self.client.fetch_user(ctx.user_id)
+        if ctx.response and (len(ctx.response.content) > 0):
+            message, files = await self.form_response_from_content(ctx.response.content)
+            await user.send(message, files=files)
+
+    async def form_response_from_content(self, content: list[str | FileModel]) -> None:
+        message = ""
+        files = []
+        for c in content:
+            if isinstance(c, str):
+                message += c
+            elif isinstance(c, FileModel):
+                files.append(c)
+        return message, files
 
     async def listen(self) -> None:
         @self.client.listen(Startup)
@@ -59,8 +66,6 @@ class DiscordChannel(ReciverPlugin, EmitterPlugin):
 
             self.logger.info("Create Context")
 
-            # TODO: convert discord message to RequestMessageModel
-
             content = []
             async with httpx.AsyncClient() as client:
                 for a in event.message.attachments:
@@ -79,7 +84,6 @@ class DiscordChannel(ReciverPlugin, EmitterPlugin):
                                 data=r.content,
                             ),
                         )
-
                     except httpx.HTTPStatusError as exc:
                         self.logger.error(  # noqa: TRY400 We don't care why it failed, the status code is enough
                             f"Recived a {exc.response.status_code} error when trying to download the url: {a.url}. \
@@ -89,6 +93,12 @@ class DiscordChannel(ReciverPlugin, EmitterPlugin):
             if event.message.content:
                 content.append(event.message.content)
             message = RequestMessageModel(role="user", content=content)
-            await self.call_workflow(message, user=str(event.message.author.id))
+            await self.call_workflow(message, user_id=str(event.message.author.id))
 
         await self.client.astart(self.config.api_token)
+
+    async def update_status(self, ctx: Context) -> None:
+        user = await self.client.fetch_user(ctx.user_id)
+        dm_channel: DM = await user.fetch_dm()
+        if dm_channel:
+            await dm_channel.trigger_typing()

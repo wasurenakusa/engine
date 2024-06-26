@@ -1,8 +1,8 @@
-from .discord_plugin import DiscordChannel
+from .discord_plugin import DiscordPlugin
 
 dependencies = []
 
-PluginMainClass = DiscordChannel
+PluginMainClass = DiscordPlugin
 
 PLUGIN_NAME = "Discord Channel"
 PLUGIN_AUTHOR = "wasurenakusa team"
