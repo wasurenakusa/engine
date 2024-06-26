@@ -15,5 +15,5 @@ class BasicCharacterDescriptions(SystemPromptPlugin):
         prompts = []
         # config should be a simply kv dict, this plugin simply parses this to a SystemPrompt part
         for name, description in self.config.items():
-            prompts.append(SystemPrompt(name=name, text=description))
+            prompts.append(SystemPrompt(name=name, content=description))
         return prompts

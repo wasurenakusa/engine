@@ -69,8 +69,8 @@ class DateTimePrompt(SystemPromptPlugin):
         # TODO: find a better solution then this if else nightmare...
 
         if self.config.locale == "de":
-            return [SystemPrompt(name="DateTime", text=self.result_de(now))]
-        return [SystemPrompt(name="DateTime", text=self.result_en(now))]
+            return [SystemPrompt(name="DateTime", content=self.result_de(now))]
+        return [SystemPrompt(name="DateTime", content=self.result_en(now))]
 
     def result_en(self, now: pendulum.DateTime) -> str:
         day_type = "weekend" if self.is_weekend(now) else "a weekday"

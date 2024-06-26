@@ -7,8 +7,8 @@ class SystemPrompt(BaseModel):
 
     Attributes:
         name (str): The name of the module, some LLMs will omit this.
-        text (str): The content of the module.
+        content (str): The content of the module.
     """
 
     name: str
-    text: str
+    content: str | "SystemPrompt"
