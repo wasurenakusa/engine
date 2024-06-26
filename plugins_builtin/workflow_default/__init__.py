@@ -1,4 +1,4 @@
-from .plugin import DefaultWorkflow
+from .default_workflow import DefaultWorkflow
 
 dependencies = []
 

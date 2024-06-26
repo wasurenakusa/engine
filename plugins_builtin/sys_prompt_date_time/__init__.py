@@ -1,4 +1,4 @@
-from .plugin import DateTimePrompt
+from .date_time import DateTimePrompt
 
 dependencies = ["pendulum==^3.0.0", "httpx=^0.27.0"]
 

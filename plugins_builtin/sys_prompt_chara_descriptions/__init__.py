@@ -1,4 +1,4 @@
-from .plugin import BasicCharacterDescriptions
+from .basic_character_description import BasicCharacterDescriptions
 
 dependencies = []
 
