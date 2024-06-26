@@ -156,7 +156,8 @@ class AnthropicLlm(LlmPlugin):
 
         Args:
             system_prompts (str): The system prompts to provide context for the response.
-            messages (list[anthropic_types.MessageParam]): The list of messages exchanged between the user and the system.
+            messages (list[anthropic_types.MessageParam]): The list of messages exchanged between the user
+                                                           and the system.
             tools (list[dict]): The list of tools used for generating the response.
 
         Returns:
