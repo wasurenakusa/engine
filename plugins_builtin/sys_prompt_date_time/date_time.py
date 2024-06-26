@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from models.context import Context
 from models.system_prompt import SystemPrompt
-from plugin_system.abc.system_prompt_module import SystemPromptPlugin
+from plugin_system.abc.sys_prompt import SystemPromptPlugin
 
 
 class PartOfDay(enum.Enum):
