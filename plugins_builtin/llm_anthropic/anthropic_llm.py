@@ -49,11 +49,29 @@ class AnthropicLlm(LlmPlugin):
         self.client = AsyncAnthropic(api_key=self.config.api_key)
 
     def system_prompt_to_xml(self, sp: SystemPrompt) -> ElementTree.Element:
+        """
+        Converts a SystemPrompt object to an XML Element.
+
+        Args:
+            sp (SystemPrompt): The SystemPrompt object to convert.
+
+        Returns:
+            ElementTree.Element: The XML Element representing the SystemPrompt.
+        """
         if isinstance(sp.content, SystemPrompt):
             return ElementTree.Element(sp.name, self.system_prompt_to_xml(sp.content))
         return ElementTree.Element(sp.name, sp.content)
 
     async def get_llm_response(self, ctx: Context) -> None:
+        """
+        Generates a response using the Language Learning Model (LLM).
+
+        Args:
+            ctx (Context): The context object containing the necessary information for generating the response.
+
+        Returns:
+            None
+        """
         system_prompts = ""
 
         for sp in ctx.system_prompts:
@@ -76,7 +94,6 @@ class AnthropicLlm(LlmPlugin):
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             top_k=self.config.top_k,
-            stream=False,
             system=system_prompts,
             messages=messages,
             tools=tools,
@@ -88,7 +105,7 @@ class AnthropicLlm(LlmPlugin):
                 tool_name = message.content[0].name
                 tool_fn = tool_to_fn_map[tool_name]
                 tool_input = message.content[0].input
-                tool_output = tool_fn(**tool_input)
+                tool_output = await tool_fn(**tool_input)
 
                 tool_result_message: anthropic_types.ToolResultBlockParam = {
                     "type": "tool_result",
@@ -99,16 +116,21 @@ class AnthropicLlm(LlmPlugin):
                     },
                 }
                 messages.append(tool_result_message)
+                tools_to_use = tools
+
+                # if we run out ouf calls we should not call the tool anymore
+                if calls + 1 == self.config.max_tool_calls:
+                    tools_to_use = []
+
                 message = await self.generate_response(
                     model=self.config.model,
                     max_tokens=self.config.max_tokens,
                     temperature=self.config.temperature,
                     top_p=self.config.top_p,
                     top_k=self.config.top_k,
-                    stream=False,
                     system=system_prompts,
                     messages=messages,
-                    tools=tools,
+                    tools=tools_to_use,
                 )
                 calls += 1
 
@@ -118,20 +140,39 @@ class AnthropicLlm(LlmPlugin):
             ctx.response = ResponseMessageModel(role="llm", content=[content])
             return
 
-    async def generate_response(
+    async def generate_response(  # noqa: PLR0913
         self,
+        model: str,
+        max_tokens: int,
+        temperature: float,
+        top_p: int,
+        top_k: int,
         system_prompts: str,
         messages: list[anthropic_types.MessageParam],
-        tools: list[dict],
+        tools: list[anthropic_types.ToolParam],
     ) -> anthropic_types.Message:
+        """
+        Generates a response using the Anthropic Language Model.
+
+        Args:
+            system_prompts (str): The system prompts to provide context for the response.
+            messages (list[anthropic_types.MessageParam]): The list of messages exchanged between the user and the system.
+            tools (list[dict]): The list of tools used for generating the response.
+
+        Returns:
+            anthropic_types.Message: The generated response message.
+
+        Raises:
+            ServerNotReachableError: If there is an API connection error or rate limit reached.
+        """
         r: anthropic_types.Message  # Python type hinting... not needed for the code to work but for my sanity...
         try:
             r = await self.client.messages.create(
-                model=self.config.model,
-                max_tokens=self.config.max_tokens,
-                temperature=self.config.temperature,
-                top_p=self.config.top_p,
-                top_k=self.config.top_k,
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k,
                 stream=False,  # We dont want to stream the response...
                 system=system_prompts,
                 messages=messages,
@@ -205,17 +246,18 @@ class AnthropicLlm(LlmPlugin):
                 }
         return res
 
-    def parse_llm_function_to_tool(self, llm_fn: LlmFunction) -> tuple[dict, str, callable]:
+    def parse_llm_function_to_tool(self, llm_fn: LlmFunction) -> tuple[anthropic_types.ToolParam, str, callable]:
         # we generate a random name for the tool to ensure that it is unique, 8 characters should be enough
         tool_name = "".join(random.choices(string.ascii_lowercase, k=8))  # noqa: S311 No crypto in this case
-        tool_dict = {
+        tool_input_schema = {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        }
+        tool_dict: anthropic_types.ToolParam = {
             "name": tool_name,
             "description": llm_fn.description,
-            "input_schema": {
-                "type": "object",
-                "properties": {},
-                "required": [],
-            },
+            "input_schema": tool_input_schema,
         }
         for param in llm_fn.parameters:
             tool_dict["input_schema"]["properties"][param.name] = {
