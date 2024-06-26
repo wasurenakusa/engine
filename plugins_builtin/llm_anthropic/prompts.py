@@ -1,5 +1,3 @@
-DEFAULT_CHAIN_OF_THOUGHTS_THINKING_TAG = "thinking"
-
 DEFAULT_CHAIN_OF_THOUGHTS_PROMPT = """
 Answer the user's request using relevant tools (if they are available). Before calling a \
 tool, do some analysis within \\<thinking>\\</thinking> tags. First, think about which of the provided tools is the \

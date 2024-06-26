@@ -28,8 +28,7 @@ class AnthropicConfigModel(BaseSettings):
     top_p: float | None = None  # Set temperature to None to use top_p and top_k
     top_k: int | None = None
     include_image_for_the_last_n: int = 2
-    chain_of_thoughts_prompt: str = DEFAULT_CHAIN_OF_THOUGHTS_PROMPT
-    chain_of_thoughts_thinking_tag: str = DEFAULT_CHAIN_OF_THOUGHTS_THINKING_TAG
+    cot_prompt: str = DEFAULT_CHAIN_OF_THOUGHTS_PROMPT
     max_tool_calls: int = 10
 
 
@@ -80,7 +79,12 @@ class AnthropicLlm(LlmPlugin):
         if len(ctx.llm_functions) != 0:
             # LLM functions are present, we should add the chain of thoughts instructions to the system prompts
             system_prompts += ElementTree.tostring(
-                self.system_prompt_to_xml(SystemPrompt(name="chain_of_thoughts")),
+                self.system_prompt_to_xml(
+                    SystemPrompt(
+                        name="chain_of_thoughts",
+                        content=self.config.cot_prompt,
+                    ),
+                ),
                 encoding="unicode",
             )
 
@@ -197,7 +201,7 @@ class AnthropicLlm(LlmPlugin):
         tools = []
 
         for llm_fn in ctx.llm_functions:
-            tool, tool_name, tool_fn = self.parse_llm_function_to_tool(llm_fn)
+            tool, tool_name, tool_fn = self.llm_function_to_tool(llm_fn)
             tool_map[tool_name] = tool_fn
             tools.append(tool)
         return tools, tool_map
@@ -224,6 +228,20 @@ class AnthropicLlm(LlmPlugin):
         return messages
 
     def content_to_dict(self, content_list: list[str | FileModel], *, exclude_images: bool = False) -> dict:
+        """
+        Convert a list of content items to a dictionary representation.
+
+        Args:
+            content_list (list[str | FileModel]): The list of content items to convert.
+            exclude_images (bool, optional): Whether to exclude images from the conversion. Defaults to False.
+
+        Returns:
+            dict: The dictionary representation of the content items.
+
+        Raises:
+            None
+
+        """
         res = []
         for c in content_list:
             if isinstance(c, str):
@@ -247,7 +265,18 @@ class AnthropicLlm(LlmPlugin):
                 }
         return res
 
-    def parse_llm_function_to_tool(self, llm_fn: LlmFunction) -> tuple[anthropic_types.ToolParam, str, callable]:
+    def llm_function_to_tool(self, llm_fn: LlmFunction) -> tuple[anthropic_types.ToolParam, str, callable]:
+        """
+        Converts an LlmFunction object to a tool dictionary, tool name, and callable function.
+
+        Args:
+            llm_fn (LlmFunction): The LlmFunction object to convert.
+
+        Returns:
+            tuple[anthropic_types.ToolParam, str, callable]: A tuple containing the tool dictionary,
+            tool name, and callable function.
+
+        """
         # we generate a random name for the tool to ensure that it is unique, 8 characters should be enough
         tool_name = "".join(random.choices(string.ascii_lowercase, k=8))  # noqa: S311 No crypto in this case
         tool_input_schema = {
