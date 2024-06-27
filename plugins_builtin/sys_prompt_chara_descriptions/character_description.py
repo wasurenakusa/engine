@@ -18,7 +18,12 @@ class CharacterDescriptionsPlugin(SystemPromptPlugin):
 
     async def generate_system_prompts(self, ctx: Context) -> list[SystemPrompt]:  # noqa: ARG002
         prompts = []
-
-        for name, description in self.config.model_dump().items():
-            prompts.append(SystemPrompt(name=name, content=description))
+        for key, content in self.config.model_dump().items():
+            prompts.append(self.generate_prompt(key, content))
         return prompts
+
+    def generate_prompt(self, key: str, content: str | dict) -> SystemPrompt:
+        if isinstance(content, dict):
+            content = [self.generate_prompt(k, c) for k, c in content.items()]
+            return SystemPrompt(name=key, content=content)
+        return SystemPrompt(name=key, content=content)

@@ -9,8 +9,8 @@ class SystemPrompt(BaseModel):
 
     Attributes:
         name (str): The name of the module, some LLMs will omit this.
-        content (str): The content of the module.
+        content (str): The content of the module. Can be a nested list of SystemPrompt objects.
     """
 
     name: str
-    content: str | SystemPrompt
+    content: str | list[SystemPrompt]

@@ -112,7 +112,6 @@ class AnthropicLlm(LlmPlugin):
 
         for sp in ctx.system_prompts:
             final_system_prompt += ElementTree.tostring(self.system_prompt_to_xml(sp), encoding="unicode") + "\n"
-
         if len(ctx.llm_functions) != 0:
             # LLM functions are present, we should add the chain of thoughts instructions to the system prompts
             sp = SystemPrompt(
@@ -152,9 +151,10 @@ class AnthropicLlm(LlmPlugin):
         Returns:
             ElementTree.Element: The XML Element representing the SystemPrompt.
         """
-        if isinstance(system_prompt.content, SystemPrompt):
+        if isinstance(system_prompt.content, list):
             xml = ElementTree.Element(system_prompt.name)
-            xml.append(self.system_prompt_to_xml(system_prompt.content))
+            for sp in system_prompt.content:
+                xml.append(self.system_prompt_to_xml(sp))
             return xml
         xml = ElementTree.Element(system_prompt.name)
         xml.text = system_prompt.content
