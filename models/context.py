@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import BaseModel
 
 from models.character import CharacterModel

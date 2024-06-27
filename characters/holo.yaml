@@ -7,8 +7,9 @@ plugins:
     config: 
   - name: DefaultWorkflowPlugin
     config: 
-  - name: InmemoryPlugin
+  - name: SimpleMemoryPlugin
     config:
+      memory_file: tmp/simple_memory_holo.json
   - name: AnthropicLlm
     config:
     # The 'family friendly topics' part is required, otherwise even the slightest thing that could be interpreted as

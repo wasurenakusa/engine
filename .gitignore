@@ -7,3 +7,4 @@ characters/*
 !characters/holo.yaml
 .coverage
 coverage.xml
+tmp/
