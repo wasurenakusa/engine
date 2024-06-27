@@ -15,7 +15,8 @@ class MemoryPlugin(Plugin):
     @abstractmethod
     async def save_to_longterm_memory(self, ctx: Context) -> list[SystemPrompt]:
         """
-        This function should save the current conversation somewhere
+        This function should save the current conversation somewhere. Retriving this memory should happen
+        via a SystemPromptPlugin!
         """
 
     @abstractmethod
