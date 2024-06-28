@@ -417,13 +417,13 @@ pytz = ">2021.1"
 
 [[package]]
 name = "discord-py-interactions"
-version = "5.13.0"
+version = "5.13.1"
 description = "Easy, simple, scalable and modular: a Python API wrapper for interactions."
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "discord_py_interactions-5.13.0-py3-none-any.whl", hash = "sha256:f4562475d5c1b46f87196706d2dee1876ffa4b1ded221aeb49f4a0fc9675ff61"},
-    {file = "discord_py_interactions-5.13.0.tar.gz", hash = "sha256:74d6f38310a1b0cd0ec56121fc3835e8c6e9098761417509f5a183d7a7879f57"},
+    {file = "discord_py_interactions-5.13.1-py3-none-any.whl", hash = "sha256:a40f725b32f34da693f779554c03f158bf0dc184d09b9637def642b872266a44"},
+    {file = "discord_py_interactions-5.13.1.tar.gz", hash = "sha256:98054a323b7ac2ea1b9cbc6e2a4ec5e227e7dc19c5845925e49f6d7b1cc9d16c"},
 ]
 
 [package.dependencies]
